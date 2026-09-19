@@ -1,0 +1,1710 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pronos Pro Dashboard | Modélisation & Combinatoire Sportive</title>
+  <meta name="description" content="Tableau de bord de modélisation sportive professionnelle : dévigoration, Poisson, Elo, Bayésien et combinatoire Web Worker." />
+  <style>
+    :root {
+      --bg: #f8fafc; --card-bg: #ffffff; --accent: #2563eb; --accent-hover: #1d4ed8; --accent-light: #eff6ff;
+      --text: #334155; --text-dark: #0f172a; --text-muted: #64748b; --border: #e2e8f0; --border-dark: #cbd5e1;
+      --success: #10b981; --success-light: #ecfdf5; --warning: #f59e0b; --danger: #ef4444; --danger-light: #fef2f2;
+      --radius: 12px; --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+    #sidebar { width: 240px; background: #fff; border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; left: 0; z-index: 50; padding: 1.25rem 1rem; }
+    .brand { display: flex; align-items: center; gap: 0.75rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+    .brand-icon { width: 38px; height: 38px; background: var(--accent); color: #fff; border-radius: 10px; display: grid; place-items: center; font-weight: 800; font-size: 1.2rem; }
+    .brand-title { font-size: 1rem; font-weight: 700; color: var(--text-dark); line-height: 1.2; }
+    .brand-subtitle { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+    .nav-list { list-style: none; display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
+    .nav-btn { width: 100%; display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0.9rem; border: none; background: transparent; color: var(--text); font-size: 0.88rem; font-weight: 600; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.15s; }
+    .nav-btn:hover { background: var(--accent-light); color: var(--accent); }
+    .nav-btn.active { background: var(--accent); color: #fff; box-shadow: 0 2px 4px rgba(37,99,235,0.2); }
+    .nav-badge { margin-left: auto; background: rgba(0,0,0,0.06); padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+    .nav-btn.active .nav-badge { background: rgba(255,255,255,0.25); color: #fff; }
+    .sidebar-footer { padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.72rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.35rem; }
+    #main-container { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-width: 0; padding-bottom: 3rem; }
+    .top-header { height: 60px; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; position: sticky; top: 0; z-index: 40; }
+    .top-title { font-size: 1.1rem; font-weight: 700; color: var(--text-dark); }
+    .top-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; text-decoration: none; white-space: nowrap; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: #fff; border-color: var(--border); color: var(--text); }
+    .btn-secondary:hover { background: var(--bg); border-color: var(--border-dark); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.75rem; }
+    .content-area { padding: 1.25rem; max-width: 1400px; width: 100%; margin: 0 auto; }
+    .view-section { display: none; }
+    .view-section.active { display: block; animation: fadeIn 0.2s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 0.5rem; }
+    .card-title { font-size: 1rem; font-weight: 700; color: var(--text-dark); }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+    .kpi-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.25rem; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+    .kpi-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+    .kpi-value { font-size: 1.5rem; font-weight: 800; color: var(--text-dark); }
+    .kpi-sub { font-size: 0.72rem; color: var(--text-muted); }
+    .matches-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.25rem; margin-top: 1rem; }
+    .match-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 1.15rem; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .match-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .match-number-badge { background: var(--accent-light); color: var(--accent); font-weight: 800; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 6px; }
+    .match-name-input { flex: 1; font-size: 0.92rem; font-weight: 700; color: var(--text-dark); border: 1px solid transparent; padding: 0.3rem 0.4rem; border-radius: 6px; }
+    .match-name-input:focus { border-color: var(--accent); background: #fff; outline: none; }
+    .form-group { display: flex; flex-direction: column; gap: 0.25rem; }
+    .form-label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .input-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
+    .input-row-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.45rem; }
+    .input-field { width: 100%; padding: 0.4rem 0.55rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; font-family: inherit; color: var(--text-dark); background: #fff; }
+    .input-field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
+    .input-field-sm { padding: 0.25rem 0.45rem; font-size: 0.78rem; }
+    .toggle-group { display: flex; background: var(--bg); padding: 2px; border-radius: 8px; border: 1px solid var(--border); }
+    .toggle-opt { flex: 1; text-align: center; padding: 0.25rem 0.45rem; font-size: 0.72rem; font-weight: 700; border: none; background: transparent; color: var(--text-muted); cursor: pointer; border-radius: 6px; }
+    .toggle-opt.active { background: #fff; color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+    .pipeline-preview { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.55rem 0.75rem; font-size: 0.72rem; display: flex; flex-direction: column; gap: 0.35rem; }
+    .pipeline-head { display: flex; justify-content: space-between; color: var(--text-muted); font-weight: 600; }
+    .pipeline-bar-wrap { display: flex; height: 16px; border-radius: 4px; overflow: hidden; background: #e2e8f0; }
+    .p-bar-1 { background: #3b82f6; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 0.65rem; }
+    .p-bar-N { background: #94a3b8; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 0.65rem; }
+    .p-bar-2 { background: #f97316; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 0.65rem; }
+    .progress-box { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: none; }
+    .progress-info { display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .progress-track { width: 100%; height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), #38bdf8); border-radius: 999px; transition: width 0.1s; }
+    .filters-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem 1.25rem; margin-bottom: 1.25rem; }
+    .filter-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--text); }
+    .table-container { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+    .combos-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem; }
+    .combos-table th { background: #f8fafc; padding: 0.75rem 0.9rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 0.7rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .combos-table td { padding: 0.75rem 0.9rem; border-bottom: 1px solid var(--border); color: var(--text-dark); vertical-align: middle; }
+    .combos-table tr:hover td { background: #f1f5f9; }
+    @keyframes rowStaggerFadeIn { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: translateY(0); } }
+    .combos-table tbody tr.row-stagger-in { opacity: 0; animation: rowStaggerFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: var(--stagger-delay, 0ms); }
+    .odd-badge { font-weight: 800; font-size: 0.9rem; color: var(--text-dark); background: var(--bg); border: 1px solid var(--border); padding: 0.2rem 0.45rem; border-radius: 6px; display: inline-block; }
+    .prob-badge { font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 0.4rem; }
+    .prob-meter { width: 45px; height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; display: inline-block; }
+    .prob-fill { height: 100%; background: var(--accent); }
+    .selection-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .sel-chip { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.15rem 0.4rem; border-radius: 5px; font-size: 0.72rem; font-weight: 700; background: #f1f5f9; border: 1px solid #cbd5e1; }
+    .sel-chip.sel-1 { background: #dbeafe; border-color: #93c5fd; color: #1e40af; }
+    .sel-chip.sel-N { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
+    .sel-chip.sel-2 { background: #ffedd5; border-color: #fdba74; color: #9a3412; }
+    .sel-chip.sel-plus { background: #dcfce7; border-color: #86efac; color: #166534; }
+    .sel-chip.sel-minus { background: #f3e8ff; border-color: #d8b4fe; color: #6b21a8; }
+    .pagination-bar { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: #fff; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 0.75rem; }
+    .val-match-row { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; border-bottom: 1px solid var(--border); gap: 1rem; flex-wrap: wrap; }
+    .winning-card { background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); border: 2px solid var(--success); border-radius: var(--radius); padding: 1.25rem; margin-top: 1.25rem; }
+    #bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 58px; background: #fff; border-top: 1px solid var(--border); z-index: 100; justify-content: space-around; align-items: center; padding: 0 0.5rem; }
+    .b-nav-btn { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; background: transparent; border: none; color: var(--text-muted); font-size: 0.68rem; font-weight: 600; cursor: pointer; }
+    .b-nav-btn.active { color: var(--accent); }
+    @media (max-width: 768px) {
+      #sidebar { display: none; }
+      #bottom-nav { display: flex; }
+      #main-container { margin-left: 0; padding-bottom: 70px; }
+      .content-area { padding: 1rem; }
+      .matches-grid { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-window { background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15); width: 100%; max-width: 800px; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--border); background: #f8fafc; }
+    .modal-title { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin: 0; }
+    .btn-close-modal { background: transparent; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer; padding: 0.3rem 0.5rem; border-radius: 6px; }
+    .modal-body { padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; font-size: 0.82rem; line-height: 1.55; color: var(--text); }
+    .guide-section { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 0.9rem 1rem; }
+    .guide-section-title { font-size: 0.88rem; font-weight: 800; color: var(--text-dark); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+    .guide-badge { font-size: 0.68rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+    .guide-badge-blue { background: #dbeafe; color: #1e40af; }
+    .guide-badge-green { background: #dcfce7; color: #166534; }
+    .guide-badge-orange { background: #ffedd5; color: #9a3412; }
+    .guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.65rem; margin-top: 0.4rem; }
+    .guide-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.65rem; font-size: 0.78rem; }
+    .guide-card-title { font-weight: 700; color: var(--text-dark); margin-bottom: 0.2rem; }
+    .guide-code { background: #e2e8f0; color: #0f172a; font-family: monospace; padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .modal-footer { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); background: #f8fafc; }
+    .save-status-badge { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.6rem; border-radius: 999px; background: #f1f5f9; border: 1px solid #e2e8f0; font-size: 0.72rem; font-weight: 600; color: var(--text-muted); transition: all 0.2s; }
+    .save-dot { width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; }
+    .save-status-badge.saved { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+    .save-status-badge.saved .save-dot { background: #10b981; }
+
+    /* V2.0 Styles Constructeur Visuel, Chips & Actions */
+    .history-chips-bar { display: flex; flex-wrap: wrap; gap: 0.3rem; min-height: 24px; align-items: center; padding: 0.2rem 0; }
+    .h-chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.45rem; border-radius: 5px; font-size: 0.7rem; font-weight: 700; border: 1px solid transparent; transition: all 0.12s; }
+    .h-chip-v { background: #dcfce7; border-color: #86efac; color: #166534; }
+    .h-chip-n { background: #fef3c7; border-color: #fde047; color: #92400e; }
+    .h-chip-d { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+    .h-chip-tag { font-weight: 800; font-size: 0.68rem; text-transform: uppercase; }
+    .h-chip-score { font-family: monospace; font-size: 0.72rem; }
+    .h-chip-del { background: transparent; border: none; font-size: 0.85rem; line-height: 1; cursor: pointer; color: inherit; opacity: 0.6; padding: 0 0.1rem; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; }
+    .h-chip-del:hover { opacity: 1; background: rgba(0,0,0,0.08); }
+    .h-empty-tip { font-size: 0.7rem; color: var(--text-muted); font-style: italic; }
+
+    .vb-container { background: #ffffff; border: 1px solid var(--border); border-radius: 6px; padding: 0.45rem 0.55rem; display: flex; flex-direction: column; gap: 0.35rem; }
+    .vb-row { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+    .vb-label { font-size: 0.67rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; white-space: nowrap; }
+    .vb-group { display: inline-flex; background: #f1f5f9; border: 1px solid var(--border); border-radius: 6px; padding: 1px; }
+    .vb-btn { background: transparent; border: none; padding: 0.2rem 0.45rem; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); cursor: pointer; border-radius: 5px; transition: all 0.1s; }
+    .vb-btn.active { background: #fff; color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+    .vb-score-box { display: flex; align-items: center; gap: 0.2rem; }
+    .vb-num-input { width: 32px; height: 24px; text-align: center; border: 1px solid var(--border); border-radius: 5px; font-size: 0.75rem; font-weight: 700; color: var(--text-dark); }
+    .vb-num-input:focus { outline: none; border-color: var(--accent); }
+    .vb-add-btn { padding: 0.2rem 0.55rem; font-size: 0.72rem; font-weight: 700; border-radius: 5px; margin-left: auto; }
+
+    .match-actions-bar { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.4rem; padding-top: 0.65rem; border-top: 1px solid var(--border); flex-wrap: wrap; }
+    .btn-ask-ai { font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.35rem; }
+    .btn-save-match { font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s; }
+    .btn-save-match.saved-success { background: var(--success) !important; border-color: var(--success) !important; color: #fff !important; }
+    .history-team-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; }
+    .history-team-title { font-size: 0.75rem; color: var(--text-dark); }
+    .history-team-badge { font-size: 0.65rem; color: var(--accent); background: var(--accent-light); padding: 0.1rem 0.35rem; border-radius: 4px; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="brand-icon">P</div>
+      <div>
+        <div class="brand-title">Pronos Pro</div>
+        <div class="brand-subtitle">Analytics & Science</div>
+      </div>
+    </div>
+    <ul class="nav-list">
+      <li><button class="nav-btn active" data-view="view-config" id="nav-config">⚙️ Configuration <span class="nav-badge" id="badge-match-count">0</span></button></li>
+      <li><button class="nav-btn" data-view="view-supervision" id="nav-supervision">📊 Supervision <span class="nav-badge" id="badge-combos-count">0</span></button></li>
+      <li><button class="nav-btn" data-view="view-validation" id="nav-validation">✅ Validation</button></li>
+      <li><button class="nav-btn" data-view="view-archives" id="nav-archives">🗄️ Archives & Suivi <span class="nav-badge" id="badge-archives-count">0</span></button></li>
+    </ul>
+    <div class="sidebar-footer">
+      <div>Pipeline: <strong>Dévigoration + Poisson + Elo</strong></div>
+      <div>Web Worker: <span id="worker-status-indicator" style="color:var(--success); font-weight:700;">Prêt</span></div>
+      <div>Persistance: LocalStorage sync</div>
+    </div>
+  </aside>
+
+  <!-- Main Container -->
+  <main id="main-container">
+    <header class="top-header">
+      <div class="top-title" id="page-header-title">Configuration des Matchs</div>
+      <div class="top-actions">
+        <div class="save-status-badge" id="save-indicator"><span class="save-dot"></span><span class="save-text">Sauvegarde auto</span></div>
+        <button class="btn btn-secondary btn-sm" id="btn-open-guide">❓ Notice &amp; Guide</button>
+        <button class="btn btn-secondary btn-sm" id="btn-load-demo">Exemple Démo</button>
+        <button class="btn btn-secondary btn-sm" id="btn-reset-session">Réinitialiser</button>
+        <button class="btn btn-primary btn-sm" id="btn-quick-calculate">⚡ Calculer Combinatoire</button>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <!-- VUE 1 : CONFIGURATION -->
+      <section id="view-config" class="view-section active">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Paramétrage des Événements (Max 12)</h2>
+              <p style="font-size:0.78rem; color:var(--text-muted);">Saisie des cotes bookmakers et des métriques d'équipe. Le moteur recalcule les probabilités dévigorées en temps réel.</p>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button class="btn btn-secondary btn-sm" id="btn-new-day">Nouvelle Journée</button>
+              <button class="btn btn-secondary btn-sm" id="btn-preset-champions">Preset Top 4</button>
+              <button class="btn btn-primary btn-sm" id="btn-add-match">+ Ajouter un Match</button>
+            </div>
+          </div>
+          <div id="matches-container" class="matches-grid"></div>
+        </div>
+      </section>
+
+      <!-- VUE 2 : SUPERVISION -->
+      <section id="view-supervision" class="view-section">
+        <div class="kpi-grid">
+          <div class="kpi-card"><span class="kpi-label">Combinaisons</span><span class="kpi-value" id="kpi-combos-count">0</span><span class="kpi-sub" id="kpi-combos-sub">Produit cartésien</span></div>
+          <div class="kpi-card"><span class="kpi-label">Cote Max</span><span class="kpi-value" id="kpi-max-odd">0.00</span><span class="kpi-sub">Plus fort multiplicateur</span></div>
+          <div class="kpi-card"><span class="kpi-label">Cote Min</span><span class="kpi-value" id="kpi-min-odd">0.00</span><span class="kpi-sub">Combinaison plus safe</span></div>
+          <div class="kpi-card"><span class="kpi-label">Temps Calcul</span><span class="kpi-value" id="kpi-calc-time">0 ms</span><span class="kpi-sub">Worker asynchrone</span></div>
+        </div>
+
+        <div id="worker-progress-box" class="progress-box">
+          <div class="progress-info"><span id="progress-title">Calcul combinatoire...</span><span id="progress-percent">0%</span></div>
+          <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.4rem; display:flex; justify-content:space-between;"><span id="progress-items">0 / 0</span><span>Tri décroissant par Probabilité</span></div>
+        </div>
+
+        <div class="filters-bar">
+          <div class="filter-item"><label for="filter-min-prob">Proba min :</label><input type="number" id="filter-min-prob" class="input-field input-field-sm" style="width:65px;" value="0" min="0" max="100">%</div>
+          <div class="filter-item"><label for="filter-max-odd">Cote max :</label><input type="number" id="filter-max-odd" class="input-field input-field-sm" style="width:75px;" placeholder="Toutes" min="1"></div>
+          <div class="filter-item"><label for="input-stake">Mise simulée (€) :</label><input type="number" id="input-stake" class="input-field input-field-sm" style="width:70px;" value="10" min="1"></div>
+          <div style="margin-left:auto; display:flex; gap:0.5rem;">
+            <button class="btn btn-secondary btn-sm" id="btn-export-csv">Exporter CSV</button>
+            <button class="btn btn-primary btn-sm" id="btn-recalculate-worker">Relancer Calcul</button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="combos-table">
+            <thead>
+              <tr>
+                <th style="width:50px;">#</th>
+                <th style="width:160px;">Probabilité Globale</th>
+                <th style="width:100px;">Cote</th>
+                <th style="width:120px;">Gain Estimé</th>
+                <th style="width:100px;">Value (EV)</th>
+                <th>Détail des Sélections du Produit Cartésien</th>
+                <th style="width:90px; text-align:center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="combos-table-body"></tbody>
+          </table>
+          <div class="pagination-bar">
+            <div class="page-info" id="pagination-info">0 à 0 sur 0</div>
+            <div class="page-controls">
+              <button class="btn btn-secondary btn-sm" id="btn-page-first">« Premier</button>
+              <button class="btn btn-secondary btn-sm" id="btn-page-prev">‹ Précédent</button>
+              <span style="font-size:0.8rem; font-weight:700; margin:0 0.4rem;" id="page-current-display">Page 1 / 1</span>
+              <button class="btn btn-secondary btn-sm" id="btn-page-next">Suivant ›</button>
+              <button class="btn btn-secondary btn-sm" id="btn-page-last">Dernier »</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VUE 3 : VALIDATION -->
+      <section id="view-validation" class="view-section">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Clôture des Résultats & Détection de la Grille Gagnante</h2>
+              <p style="font-size:0.78rem; color:var(--text-muted);">Sélectionnez les résultats observés. L'algorithme isole instantanément la combinaison victorieuse correspondante.</p>
+            </div>
+          </div>
+          <div id="validation-matches-list"></div>
+          <div style="margin-top:1rem; display:flex; gap:0.6rem; flex-wrap:wrap;">
+            <button class="btn btn-primary" id="btn-resolve-winning">✓ Identifier la Combinaison Gagnante</button>
+            <button class="btn btn-secondary" id="btn-auto-fill-fav">Remplir avec les Favoris</button>
+          </div>
+          <div id="winning-combo-container" style="display:none;"></div>
+        </div>
+      </section>
+
+      <!-- VUE 4 : ARCHIVES -->
+      <section id="view-archives" class="view-section">
+        <div class="kpi-grid">
+          <div class="kpi-card"><span class="kpi-label">Grilles Validées</span><span class="kpi-value" id="kpi-arch-total">0</span><span class="kpi-sub">Historique</span></div>
+          <div class="kpi-card"><span class="kpi-label">Cote Moyenne Gagnante</span><span class="kpi-value" id="kpi-arch-avg-odd">0.00</span><span class="kpi-sub">Sessions gagnantes</span></div>
+          <div class="kpi-card"><span class="kpi-label">Bénéfice Cumulé Net</span><span class="kpi-value" id="kpi-arch-profit">0.00 €</span><span class="kpi-sub">Mises déduites</span></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Historique des Grilles Archivées</h2>
+            <div style="display:flex; gap:0.5rem;">
+              <button class="btn btn-secondary btn-sm" id="btn-export-backup">Exporter JSON</button>
+              <button class="btn btn-danger btn-sm" id="btn-clear-archives">Vider Archives</button>
+            </div>
+          </div>
+          <div id="archives-list"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Mobile Bottom Nav -->
+  <nav id="bottom-nav">
+    <button class="b-nav-btn active" data-view="view-config">⚙️<span>Config</span></button>
+    <button class="b-nav-btn" data-view="view-supervision">📊<span>Supervision</span></button>
+    <button class="b-nav-btn" data-view="view-validation">✅<span>Validation</span></button>
+    <button class="b-nav-btn" data-view="view-archives">🗄️<span>Archives</span></button>
+  </nav>
+
+  <div id="toast" style="position:fixed; bottom:20px; right:20px; background:#0f172a; color:#fff; padding:0.65rem 1.1rem; border-radius:8px; font-size:0.82rem; font-weight:600; display:none; z-index:9999;"></div>
+
+  <!-- Modal Guide / Notice -->
+  <div id="guide-modal" class="modal-backdrop" style="display:none;">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2 class="modal-title">❓ Notice &amp; Guide d'Utilisation</h2>
+        <button type="button" class="btn-close-modal" id="btn-close-modal-x">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="guide-section">
+          <div class="guide-section-title"><span class="guide-badge guide-badge-blue">Navigation</span> 4 Vues Opérationnelles</div>
+          <div class="guide-grid">
+            <div class="guide-card"><div class="guide-card-title">1. ⚙️ Configuration</div>Saisissez jusqu'à 12 matchs, les cotes bookmakers et métriques (forme, H2H, rang, actualité).</div>
+            <div class="guide-card"><div class="guide-card-title">2. 📊 Supervision</div>Explorez le produit cartésien asynchrone (Web Worker), ordonné par probabilité globale (Value Bet) avec filtres.</div>
+            <div class="guide-card"><div class="guide-card-title">3. ✅ Validation</div>Cochez les scores réels pour identifier la combinaison gagnante et ses gains nets.</div>
+            <div class="guide-card"><div class="guide-card-title">4. 🗄️ Archives</div>Historique des sessions clôturées, statistiques de retour sur investissement et export JSON.</div>
+          </div>
+        </div>
+        <div class="guide-section">
+          <div class="guide-section-title"><span class="guide-badge guide-badge-green">Saisie V2.0</span> Format &amp; Outils Avancés</div>
+          <ul style="padding-left:1.2rem; display:flex; flex-direction:column; gap:0.35rem;">
+            <li><strong>Historique Pondéré :</strong> Syntaxe stricte <span class="guide-code">[vd(score);ve(score);nd(score)...]</span> valorisant les déplacements : <strong>ve</strong> (4 pts, Victoire Extérieur), <strong>vd</strong> (3 pts, Victoire Domicile), <strong>ne</strong> (1.5 pt, Nul Extérieur), <strong>nd</strong> (1 pt, Nul Domicile), <strong>dd/de</strong> (0 pt), avec bonus différentiel de buts.</li>
+            <li><strong>Two-Way Binding :</strong> Champ texte synchronisé en temps réel avec le Constructeur Visuel (boutons V/N/D, Dom/Ext, Buts).</li>
+            <li><strong>Demander à l'IA :</strong> Bouton 🤖 sur chaque match copiant le prompt d'analyse de forme instantané pour ChatGPT / Gemini.</li>
+            <li><strong>Sauvegarde Dédiée :</strong> Bouton par match validant et confirmant l'enregistrement en vert <span class="guide-code">Données enregistrées ✅</span>.</li>
+            <li><strong>Cotes Indépendantes :</strong> Nouvelles cotes initialisées par défaut à <span class="guide-code">2.00</span> sur chaque option sans aucune référence partagée.</li>
+          </ul>
+        </div>
+        <div class="guide-section">
+          <div class="guide-section-title"><span class="guide-badge guide-badge-orange">Algorithme</span> Pipeline Mathématique</div>
+          <p>1. <strong>Dévigoration</strong> (retrait de marge) ➔ 2. <strong>Modèle Poisson</strong> (forme pondérée récence) ➔ 3. <strong>Ajustement Elo</strong> (différentiel de force) ➔ 4. <strong>Facteur Bayésien</strong> ➔ 5. <strong>Produit Cartésien</strong> ($3^{12}$ itérations max) avec calcul d'Expected Value (<span class="guide-code">EV = Cote × Proba - 1</span>).</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span style="font-size:0.75rem; color:var(--text-muted);">Touche Échap ou clic extérieur pour fermer</span>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-close-modal-ok">J'ai compris</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // =========================================================================
+    // 1. ÉTAT ET PERSISTANCE
+    // =========================================================================
+    const STORAGE_KEY = 'pronos_pro_dashboard_v2';
+    const PREV_STORAGE_KEY = 'pronos_pro_dashboard_clean_v1';
+
+    // Deep clone helper : garantit une isolation mémoire stricte à 100%
+    function deepClone(obj) {
+      if (typeof structuredClone === 'function') {
+        try { return structuredClone(obj); } catch (e) {}
+      }
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    // Optimization 1 : createNewMatch() produisant un match totalement isolé
+    // avec cotes par défaut à 2.00 sur chaque option
+    function createNewMatch(customIndex) {
+      const idx = customIndex !== undefined ? customIndex : (appState.matches.length + 1);
+      const uniqueId = 'm-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+      const matchObj = {
+        id: uniqueId,
+        name: `Match #${idx}`,
+        type: 3,
+        odds: {
+          h: 2.00,
+          d: 2.00,
+          a: 2.00,
+          over: 2.00,
+          under: 2.00
+        },
+        form: {
+          home: '',
+          away: ''
+        },
+        h2h: '',
+        rank: {
+          home: 1,
+          away: 2
+        },
+        news: {
+          home: 3,
+          away: 3
+        }
+      };
+      return deepClone(matchObj);
+    }
+
+    const defaultMatches = [
+      {
+        id: 'm-1',
+        name: 'Real Madrid - Manchester City',
+        type: 3,
+        odds: { h: 2.25, d: 3.50, a: 3.10, over: 1.85, under: 1.95 },
+        form: {
+          home: '[vd(3-1);ve(2-0);nd(1-1);vd(4-2);ve(2-1)]',
+          away: '[ne(2-2);ve(3-0);vd(1-0);ve(2-1);vd(3-1)]'
+        },
+        h2h: '1-1 3-3 1-2 3-1 4-3',
+        rank: { home: 1, away: 2 },
+        news: { home: 4, away: 4 }
+      },
+      {
+        id: 'm-2',
+        name: 'Bayern Munich - Arsenal',
+        type: 3,
+        odds: { h: 2.40, d: 3.60, a: 2.85, over: 1.75, under: 2.05 },
+        form: {
+          home: '[vd(2-0);vd(5-1);ne(2-2);vd(1-0);vd(3-2)]',
+          away: '[ve(3-0);ve(2-1);de(0-2);vd(2-0);ve(1-0)]'
+        },
+        h2h: '1-0 2-2 5-1 1-5 1-1',
+        rank: { home: 2, away: 1 },
+        news: { home: 3, away: 5 }
+      },
+      {
+        id: 'm-3',
+        name: 'Paris SG - Barcelona',
+        type: 3,
+        odds: { h: 2.05, d: 3.80, a: 3.35, over: 1.70, under: 2.15 },
+        form: {
+          home: '[vd(4-1);nd(1-1);vd(3-0);vd(2-0);vd(1-0)]',
+          away: '[ve(1-0);ve(3-1);vd(2-0);vd(3-0);ve(2-1)]'
+        },
+        h2h: '1-4 2-3 1-1 4-0 1-6',
+        rank: { home: 1, away: 2 },
+        news: { home: 4, away: 3 }
+      },
+      {
+        id: 'm-4',
+        name: 'Inter Milan - Atletico Madrid',
+        type: 2,
+        odds: { h: 1.95, d: 3.30, a: 4.10, over: 2.10, under: 1.75 },
+        form: {
+          home: '[vd(1-0);ve(2-1);vd(4-0);vd(2-0);vd(1-0)]',
+          away: '[de(0-1);vd(2-0);nd(1-1);de(0-1);ve(2-1)]'
+        },
+        h2h: '1-0 1-2 0-2',
+        rank: { home: 1, away: 4 },
+        news: { home: 5, away: 3 }
+      }
+    ];
+
+    let appState = { matches: [], combos: [], archives: [], lastUpdate: Date.now(), stats: { total: 0, minOdd: 0, maxOdd: 0, calcTime: 0 } };
+
+    function loadState() {
+      try {
+        let saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) saved = localStorage.getItem(PREV_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && Array.isArray(parsed.matches)) { appState = parsed; return; }
+        }
+      } catch (e) {}
+      appState.matches = deepClone(defaultMatches);
+      appState.combos = [];
+      appState.archives = [];
+      saveState();
+    }
+
+    function saveState() {
+      appState.lastUpdate = Date.now();
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...appState, combos: appState.combos.slice(0, 500) })); } catch (err) {}
+      }
+      updateBadges(); triggerSaveIndicator();
+    }
+
+    let saveTimeout = null;
+    function triggerSaveIndicator() {
+      const el = document.getElementById('save-indicator');
+      if (!el) return;
+      el.classList.add('saved');
+      const timeStr = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      el.querySelector('.save-text').textContent = `Enregistré (${timeStr})`;
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => { el.classList.remove('saved'); el.querySelector('.save-text').textContent = 'Sauvegarde auto'; }, 2000);
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 2500);
+    }
+
+    function copyComboDetails(combo, rank) {
+      const stake = parseFloat(document.getElementById('input-stake')?.value) || 10;
+      const lines = [
+        `🎯 Pronos Pro - Grille #${rank}`,
+        `📊 Proba : ${combo.probPct.toFixed(2)}% | Cote : ${combo.odd.toFixed(2)} | EV : ${(combo.ev * 100).toFixed(1)}%`,
+        `💰 Mise : ${stake.toFixed(2)} € ➔ Gain estimé : ${(combo.odd * stake).toFixed(2)} €`,
+        `──────────────────────────────`,
+        ...combo.selections.map(s => `• ${s.matchName} : [ ${s.sel} ] (@${s.odd})`),
+        `──────────────────────────────`
+      ];
+      const text = lines.join('\n');
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast(`📋 Grille #${rank} copiée !`)).catch(() => fallbackCopy(text, rank));
+      } else { fallbackCopy(text, rank); }
+    }
+
+    function fallbackCopy(text, label) {
+      const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      showToast(typeof label === 'number' ? `📋 Grille #${label} copiée !` : `📋 Copié dans le presse-papier !`);
+    }
+
+    // Optimization 3 : Extraction des équipes et Générateur de Prompt IA
+    function extractTeamNames(matchName) {
+      let eq1 = 'Équipe 1';
+      let eq2 = 'Équipe 2';
+      if (matchName && typeof matchName === 'string') {
+        const trimmed = matchName.trim();
+        const parts = trimmed.split(/\s*[-–—\/]|(?:\s+vs\.?\s+)\s*/i);
+        if (parts.length >= 2 && parts[0].trim() && parts[1].trim()) {
+          eq1 = parts[0].trim();
+          eq2 = parts[1].trim();
+        } else if (trimmed) {
+          eq1 = trimmed;
+          eq2 = 'Adversaire';
+        }
+      }
+      return { eq1, eq2 };
+    }
+
+    function getAIPromptForMatch(m) {
+      const { eq1, eq2 } = extractTeamNames(m.name);
+      return `Agis comme un analyste foot pro. Fais une recherche sur internet de la forme actuelle de ${eq1} et ${eq2}. Ne prends PAS en compte leurs confrontations directes (H2H). Donne-moi UNIQUEMENT les 5 derniers résultats de chaque équipe sous cette syntaxe stricte (séparés par des points-virgules) : [vd(score);ve(score);nd(score)...] où vd=Victoire Domicile, ve=Victoire Extérieur, nd=Nul Domicile, ne=Nul Extérieur, dd=Défaite Domicile, de=Défaite Extérieur. Ajoute à la fin une note sur 5 évaluant l'actualité de l'effectif.`;
+    }
+
+    function copyAIPrompt(matchId, buttonEl) {
+      const m = appState.matches.find(x => x.id === matchId);
+      if (!m) return;
+      const promptText = getAIPromptForMatch(m);
+      const { eq1, eq2 } = extractTeamNames(m.name);
+
+      const onSuccess = () => {
+        if (buttonEl) {
+          const origHtml = buttonEl.innerHTML;
+          buttonEl.innerHTML = '🤖 Prompt copié !';
+          buttonEl.classList.add('btn-success');
+          buttonEl.classList.remove('btn-secondary');
+          setTimeout(() => {
+            if (buttonEl && buttonEl.isConnected) {
+              buttonEl.innerHTML = origHtml;
+              buttonEl.classList.remove('btn-success');
+              buttonEl.classList.add('btn-secondary');
+            }
+          }, 2000);
+        }
+        showToast(`🤖 Prompt IA copié pour ${eq1} vs ${eq2} !`);
+      };
+
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(promptText).then(onSuccess).catch(() => {
+          fallbackCopy(promptText, 'Prompt IA');
+          onSuccess();
+        });
+      } else {
+        fallbackCopy(promptText, 'Prompt IA');
+        onSuccess();
+      }
+    }
+
+    // Optimization 2 : Sauvegarder spécifiquement un match
+    function saveSpecificMatch(matchId, buttonEl) {
+      const m = appState.matches.find(x => x.id === matchId);
+      if (!m) return;
+      saveState();
+      if (buttonEl) {
+        const origHtml = buttonEl.innerHTML;
+        buttonEl.innerHTML = 'Données enregistrées ✅';
+        buttonEl.classList.add('saved-success');
+        buttonEl.classList.remove('btn-secondary');
+        setTimeout(() => {
+          if (buttonEl && buttonEl.isConnected) {
+            buttonEl.innerHTML = origHtml;
+            buttonEl.classList.remove('saved-success');
+            buttonEl.classList.add('btn-secondary');
+          }
+        }, 2500);
+      }
+      showToast(`Match "${m.name}" : Données enregistrées ✅`);
+    }
+
+    // =========================================================================
+    // 2. MODÉLISATION MATHÉMATIQUE & PONDÉRATION AVANCÉE (Optimization 5)
+    // =========================================================================
+    // Barème de valorisation des déplacements :
+    // ve = 4.0 (Victoire Extérieur)
+    // vd = 3.0 (Victoire Domicile)
+    // ne = 1.5 (Nul Extérieur)
+    // nd = 1.0 (Nul Domicile)
+    // de/dd = 0.0 (Défaites)
+    const WEIGHT_MAP = {
+      ve: 4.0,
+      vd: 3.0,
+      ne: 1.5,
+      nd: 1.0,
+      de: 0.0,
+      dd: 0.0
+    };
+
+    function parseAdvancedSequence(str) {
+      if (!str || typeof str !== 'string') return [];
+      const clean = str.trim();
+      const items = [];
+      const tagRegex = /([vnd][de])\s*\(\s*(\d+)\s*[-:]\s*(\d+)\s*\)/gi;
+      let match;
+      let hasTags = false;
+      while ((match = tagRegex.exec(clean)) !== null) {
+        hasTags = true;
+        const tag = match[1].toLowerCase();
+        const gf = parseInt(match[2], 10);
+        const ga = parseInt(match[3], 10);
+        items.push({ tag, gf, ga });
+      }
+
+      // Rétrocompatibilité syntaxe simple "2-1 1-0"
+      if (!hasTags) {
+        const legacyRegex = /\b(\d+)\s*[-:]\s*(\d+)\b/g;
+        while ((match = legacyRegex.exec(clean)) !== null) {
+          const gf = parseInt(match[1], 10);
+          const ga = parseInt(match[2], 10);
+          let tag = gf > ga ? 'vd' : (gf === ga ? 'nd' : 'dd');
+          items.push({ tag, gf, ga });
+        }
+      }
+      return items;
+    }
+
+    function formatAdvancedSequence(items) {
+      if (!items || !items.length) return '';
+      return '[' + items.map(it => `${it.tag}(${it.gf}-${it.ga})`).join(';') + ']';
+    }
+
+    function computeAdvancedForm(sequenceStr) {
+      const items = parseAdvancedSequence(sequenceStr);
+      if (!items.length) {
+        return { avgGf: 1.5, avgGa: 1.2, ptsRate: 0.5, rawPoints: 0, itemsCount: 0 };
+      }
+
+      // Pondération de récence (les derniers matchs pèsent plus lourd)
+      const recencyBase = [0.80, 0.95, 1.10, 1.30, 1.60];
+      let sumW = 0, sumPoints = 0, sumGf = 0, sumGa = 0;
+      const maxPossiblePerMatch = 4.0 + 0.35; // 4 pts (ve) + bonus différentiel de buts
+
+      items.forEach((item, idx) => {
+        const w = recencyBase[Math.min(idx, recencyBase.length - 1)] || 1.0;
+        const basePts = WEIGHT_MAP[item.tag] !== undefined ? WEIGHT_MAP[item.tag] : 1.0;
+        const gdBonus = (item.gf - item.ga) * 0.10; // Bonus différentiel de buts
+        const itemScore = Math.max(0, basePts + gdBonus);
+
+        sumW += w;
+        sumPoints += itemScore * w;
+        sumGf += item.gf * w;
+        sumGa += item.ga * w;
+      });
+
+      const rate = sumW > 0 ? (sumPoints / (sumW * maxPossiblePerMatch)) : 0.5;
+      const clampedRate = Math.max(0.05, Math.min(0.95, rate));
+
+      return {
+        avgGf: sumGf / sumW,
+        avgGa: sumGa / sumW,
+        ptsRate: clampedRate,
+        rawPoints: sumPoints / sumW,
+        itemsCount: items.length
+      };
+    }
+
+    function parseH2HScores(str) {
+      if (!str || typeof str !== 'string') return [];
+      return (str.trim().match(/\d+-\d+/g) || []).map(p => {
+        const [gf, ga] = p.split('-').map(Number); return { gf, ga };
+      });
+    }
+
+    function processMatchPipeline(m) {
+      const is3Way = m.type === 3;
+      let trueProbs = {}, margin = 0;
+
+      if (is3Way) {
+        const invH = 1 / (m.odds?.h || 2.0), invD = 1 / (m.odds?.d || 3.0), invA = 1 / (m.odds?.a || 3.0);
+        const sumInv = invH + invD + invA;
+        margin = (sumInv - 1) * 100;
+        trueProbs = { '1': invH / sumInv, 'N': invD / sumInv, '2': invA / sumInv };
+      } else {
+        const invO = 1 / (m.odds?.over || 2.0), invU = 1 / (m.odds?.under || 2.0);
+        const sumInv = invO + invU;
+        margin = (sumInv - 1) * 100;
+        trueProbs = { '+': invO / sumInv, '-': invU / sumInv };
+      }
+
+      const hForm = computeAdvancedForm(m.form?.home);
+      const aForm = computeAdvancedForm(m.form?.away);
+      const h2h = parseH2HScores(m.h2h);
+      let h2hAdv = 0;
+      if (h2h.length) {
+        const wins = h2h.reduce((acc, x) => acc + (x.gf > x.ga ? 1 : x.gf < x.ga ? -1 : 0), 0);
+        h2hAdv = wins / h2h.length;
+      }
+      const formDiff = (hForm.ptsRate - aForm.ptsRate) * 0.20 + (h2hAdv * 0.05);
+      const rankDiff = (m.rank?.away || 10) - (m.rank?.home || 10);
+      const eloShift = (1 / (1 + Math.pow(10, -rankDiff / 18)) - 0.5) * 0.18;
+      const newsShift = (((m.news?.home || 3) - (m.news?.away || 3)) / 4) * 0.15;
+
+      let adjusted = {};
+      if (is3Way) {
+        const shift = (formDiff * 0.45) + (eloShift * 0.35) + (newsShift * 0.20);
+        const p1 = Math.max(0.01, Math.min(0.99, trueProbs['1'] + shift));
+        const pN = Math.max(0.01, Math.min(0.99, trueProbs['N'] - shift * 0.2));
+        const p2 = Math.max(0.01, Math.min(0.99, trueProbs['2'] - shift * 0.8));
+        const s = p1 + pN + p2;
+        adjusted = { '1': p1 / s, 'N': pN / s, '2': p2 / s };
+      } else {
+        const expectedGoals = (hForm.avgGf + aForm.avgGa + aForm.avgGf + hForm.avgGa) / 2;
+        const overBase = 1 - (Math.exp(-expectedGoals) * (1 + expectedGoals + (expectedGoals ** 2) / 2));
+        const blendedOver = (trueProbs['+'] * 0.5) + (overBase * 0.5);
+        const pOver = Math.max(0.01, Math.min(0.99, blendedOver));
+        adjusted = { '+': pOver, '-': 1 - pOver };
+      }
+
+      return { margin, rawProbs: trueProbs, adjustedProbs: adjusted };
+    }
+
+    // =========================================================================
+    // 3. CODE DU WEB WORKER (Combinatoire Asynchrone en arrière-plan)
+    // =========================================================================
+    const workerCode = `
+      self.onmessage = function(e) {
+        const { matches, topLimit } = e.data;
+        const n = matches.length;
+        if (!n) { self.postMessage({ type: 'done', combos: [], stats: { total: 0, minOdd: 0, maxOdd: 0, calcTime: 0 } }); return; }
+
+        const startTime = Date.now();
+        const dimensions = matches.map(m => {
+          const outcomes = [];
+          if (m.type === 3) {
+            outcomes.push({ sel: '1', prob: m.adjustedProbs['1'], odd: m.odds.h || 2 });
+            outcomes.push({ sel: 'N', prob: m.adjustedProbs['N'], odd: m.odds.d || 3 });
+            outcomes.push({ sel: '2', prob: m.adjustedProbs['2'], odd: m.odds.a || 3 });
+          } else {
+            outcomes.push({ sel: '+', prob: m.adjustedProbs['+'], odd: m.odds.over || 1.9 });
+            outcomes.push({ sel: '-', prob: m.adjustedProbs['-'], odd: m.odds.under || 1.9 });
+          }
+          return { matchId: m.id, matchName: m.name, outcomes };
+        });
+
+        let totalCombinations = 1;
+        dimensions.forEach(d => totalCombinations *= d.outcomes.length);
+
+        const BATCH_SIZE = 25000;
+        let combos = [];
+        let minOdd = Infinity, maxOdd = 0;
+        let indices = new Array(n).fill(0);
+        let count = 0;
+
+        while (true) {
+          let probProduct = 1, oddProduct = 1;
+          const selections = [];
+          for (let i = 0; i < n; i++) {
+            const out = dimensions[i].outcomes[indices[i]];
+            probProduct *= out.prob;
+            oddProduct *= out.odd;
+            selections.push({ matchId: dimensions[i].matchId, matchName: dimensions[i].matchName, sel: out.sel, odd: out.odd, prob: out.prob });
+          }
+
+          if (oddProduct < minOdd) minOdd = oddProduct;
+          if (oddProduct > maxOdd) maxOdd = oddProduct;
+
+          const ev = (oddProduct * probProduct) - 1;
+          combos.push({
+            id: 'c-' + count,
+            odd: parseFloat(oddProduct.toFixed(2)),
+            prob: probProduct,
+            probPct: parseFloat((probProduct * 100).toFixed(4)),
+            ev: parseFloat(ev.toFixed(4)),
+            selections
+          });
+
+          count++;
+          if (count % BATCH_SIZE === 0) {
+            self.postMessage({ type: 'progress', current: count, total: totalCombinations });
+          }
+
+          let p = n - 1;
+          while (p >= 0 && indices[p] === dimensions[p].outcomes.length - 1) { indices[p] = 0; p--; }
+          if (p < 0) break;
+          indices[p]++;
+        }
+
+        combos.sort((a, b) => b.prob - a.prob);
+        if (combos.length > topLimit) combos = combos.slice(0, topLimit);
+
+        const calcTime = Date.now() - startTime;
+        self.postMessage({
+          type: 'done',
+          combos,
+          stats: {
+            total: totalCombinations,
+            minOdd: minOdd === Infinity ? 0 : parseFloat(minOdd.toFixed(2)),
+            maxOdd: parseFloat(maxOdd.toFixed(2)),
+            calcTime
+          }
+        });
+      };
+    `;
+
+    let comboWorker = null;
+    function initWorker() {
+      if (comboWorker) comboWorker.terminate();
+      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      comboWorker = new Worker(URL.createObjectURL(blob));
+      comboWorker.onmessage = handleWorkerMessage;
+    }
+
+    function handleWorkerMessage(e) {
+      const data = e.data;
+      if (data.type === 'progress') {
+        const pct = Math.round((data.current / data.total) * 100);
+        document.getElementById('progress-fill').style.width = pct + '%';
+        document.getElementById('progress-percent').textContent = pct + '%';
+        document.getElementById('progress-items').textContent = `${data.current.toLocaleString()} / ${data.total.toLocaleString()}`;
+      } else if (data.type === 'done') {
+        appState.combos = data.combos;
+        appState.stats = data.stats;
+        saveState();
+        document.getElementById('worker-progress-box').style.display = 'none';
+        document.getElementById('worker-status-indicator').textContent = 'Prêt';
+        updateKPIDisplays();
+        applyFiltersAndRenderTable();
+        showToast(`Calcul terminé : ${data.combos.length} combinaisons sélectionnées.`);
+      }
+    }
+
+    // =========================================================================
+    // 4. NAVIGATION ET AFFICHAGE DES VUES
+    // =========================================================================
+    let currentView = 'view-config';
+    function switchView(viewId) {
+      currentView = viewId;
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn, .b-nav-btn').forEach(el => el.classList.remove('active'));
+
+      const target = document.getElementById(viewId);
+      if (target) target.classList.add('active');
+
+      const sideBtn = document.querySelector(`.nav-btn[data-view="${viewId}"]`);
+      if (sideBtn) sideBtn.classList.add('active');
+
+      const botBtn = document.querySelector(`.b-nav-btn[data-view="${viewId}"]`);
+      if (botBtn) botBtn.classList.add('active');
+
+      const titles = {
+        'view-config': 'Configuration des Matchs',
+        'view-supervision': 'Supervision & Analyse de la Combinatoire',
+        'view-validation': 'Validation des Résultats Réels',
+        'view-archives': 'Historique & Suivi des Grilles'
+      };
+      document.getElementById('page-header-title').textContent = titles[viewId] || 'Tableau de bord';
+
+      if (viewId === 'view-supervision') {
+        updateKPIDisplays();
+        applyFiltersAndRenderTable();
+      } else if (viewId === 'view-validation') {
+        renderValidationList();
+      } else if (viewId === 'view-archives') {
+        renderArchivesView();
+      }
+    }
+
+    function updateBadges() {
+      document.getElementById('badge-match-count').textContent = appState.matches.length;
+      document.getElementById('badge-combos-count').textContent = appState.combos.length;
+      document.getElementById('badge-archives-count').textContent = appState.archives.length;
+    }
+
+    function updateKPIDisplays() {
+      document.getElementById('kpi-combos-count').textContent = (appState.stats?.total || appState.combos.length).toLocaleString();
+      document.getElementById('kpi-combos-sub').textContent = `${appState.combos.length} combinatoires filtrées`;
+      document.getElementById('kpi-max-odd').textContent = (appState.stats?.maxOdd || 0).toFixed(2);
+      document.getElementById('kpi-min-odd').textContent = (appState.stats?.minOdd || 0).toFixed(2);
+      document.getElementById('kpi-calc-time').textContent = `${appState.stats?.calcTime || 0} ms`;
+    }
+
+    // =========================================================================
+    // 5. GESTION DES MATCHS & TWO-WAY BINDING
+    // =========================================================================
+    function addNewMatch() {
+      if (appState.matches.length >= 12) { showToast('Maximum 12 matchs.'); return; }
+      const newM = createNewMatch();
+      appState.matches.push(newM);
+      saveState();
+      renderMatchesConfig();
+      showToast(`Match #${appState.matches.length} ajouté (Cotes indépendantes à 2.00).`);
+    }
+
+    function escapeHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+    // Rendu des puces visuelles (Chips) pour une équipe
+    function renderChipsForTeam(matchId, team) {
+      const m = appState.matches.find(x => x.id === matchId);
+      if (!m) return;
+      const container = document.getElementById(`chips-${matchId}-${team}`);
+      if (!container) return;
+      const raw = m.form ? (m.form[team] || '') : '';
+      const items = parseAdvancedSequence(raw);
+      container.innerHTML = '';
+      if (!items.length) {
+        container.innerHTML = '<span class="h-empty-tip">Aucune séquence active</span>';
+        return;
+      }
+      items.forEach((item, index) => {
+        const isV = item.tag.startsWith('v');
+        const isN = item.tag.startsWith('n');
+        const chipCls = isV ? 'h-chip-v' : isN ? 'h-chip-n' : 'h-chip-d';
+        const chip = document.createElement('span');
+        chip.className = `h-chip ${chipCls}`;
+        chip.innerHTML = `
+          <span class="h-chip-tag">${item.tag.toUpperCase()}</span>
+          <span class="h-chip-score">${item.gf}-${item.ga}</span>
+          <button type="button" class="h-chip-del" data-mid="${matchId}" data-team="${team}" data-idx="${index}" title="Supprimer ce match">✕</button>
+        `;
+        container.appendChild(chip);
+      });
+
+      container.querySelectorAll('.h-chip-del').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const mid = btn.getAttribute('data-mid');
+          const tm = btn.getAttribute('data-team');
+          const idx = parseInt(btn.getAttribute('data-idx'), 10);
+          removeHistoryItem(mid, tm, idx);
+        });
+      });
+    }
+
+    function removeHistoryItem(matchId, team, index) {
+      const m = appState.matches.find(x => x.id === matchId);
+      if (!m || !m.form) return;
+      const items = parseAdvancedSequence(m.form[team]);
+      if (index >= 0 && index < items.length) {
+        items.splice(index, 1);
+        const newStr = formatAdvancedSequence(items);
+        m.form[team] = newStr;
+        const inputEl = document.querySelector(`.history-text-input[data-id="${matchId}"][data-team="${team}"]`);
+        if (inputEl) inputEl.value = newStr;
+        renderChipsForTeam(matchId, team);
+        updateMatchCardPreview(matchId);
+        saveState();
+      }
+    }
+
+    function addHistoryItemFromBuilder(matchId, team) {
+      const m = appState.matches.find(x => x.id === matchId);
+      if (!m) return;
+      const vb = document.getElementById(`vb-${matchId}-${team}`);
+      if (!vb) return;
+
+      const resBtn = vb.querySelector('.vb-group[data-group="res"] .vb-btn.active');
+      const locBtn = vb.querySelector('.vb-group[data-group="loc"] .vb-btn.active');
+      const gfIn = vb.querySelector('.vb-gf');
+      const gaIn = vb.querySelector('.vb-ga');
+
+      const res = resBtn ? resBtn.getAttribute('data-val') : 'v';
+      const loc = locBtn ? locBtn.getAttribute('data-val') : 'd';
+      const tag = (res + loc).toLowerCase();
+      const gf = Math.max(0, parseInt(gfIn?.value, 10) || 0);
+      const ga = Math.max(0, parseInt(gaIn?.value, 10) || 0);
+
+      if (!m.form) m.form = { home: '', away: '' };
+      const items = parseAdvancedSequence(m.form[team]);
+      if (items.length >= 10) {
+        showToast('Maximum 10 matchs dans la séquence.');
+        return;
+      }
+      items.push({ tag, gf, ga });
+      const newStr = formatAdvancedSequence(items);
+      m.form[team] = newStr;
+
+      const inputEl = document.querySelector(`.history-text-input[data-id="${matchId}"][data-team="${team}"]`);
+      if (inputEl) inputEl.value = newStr;
+      renderChipsForTeam(matchId, team);
+      updateMatchCardPreview(matchId);
+      saveState();
+      showToast(`${tag.toUpperCase()}(${gf}-${ga}) ajouté.`);
+    }
+
+    function updateMatchCardPreview(matchId) {
+      const m = appState.matches.find(x => x.id === matchId);
+      if (!m) return;
+      const card = document.querySelector(`.match-card[data-id="${matchId}"]`);
+      if (!card) return;
+      const pipe = processMatchPipeline(m);
+
+      const marginSpan = card.querySelector('.margin-display');
+      if (marginSpan) marginSpan.textContent = `Marge : ${pipe.margin.toFixed(1)}%`;
+
+      const previewBox = card.querySelector('.pipeline-preview-inner');
+      if (previewBox) {
+        if (m.type === 3) {
+          const p1 = (pipe.adjustedProbs['1'] * 100).toFixed(0);
+          const pN = (pipe.adjustedProbs['N'] * 100).toFixed(0);
+          const p2 = (pipe.adjustedProbs['2'] * 100).toFixed(0);
+          previewBox.innerHTML = `
+            <div class="pipeline-bar-wrap">
+              <div class="p-bar-1" style="width:${p1}%;">1: ${p1}%</div>
+              <div class="p-bar-N" style="width:${pN}%;">N: ${pN}%</div>
+              <div class="p-bar-2" style="width:${p2}%;">2: ${p2}%</div>
+            </div>
+          `;
+        } else {
+          const pO = (pipe.adjustedProbs['+'] * 100).toFixed(0);
+          const pU = (pipe.adjustedProbs['-'] * 100).toFixed(0);
+          previewBox.innerHTML = `
+            <div class="pipeline-bar-wrap">
+              <div class="p-bar-1" style="width:${pO}%;">+: ${pO}%</div>
+              <div class="p-bar-2" style="width:${pU}%;">-: ${pU}%</div>
+            </div>
+          `;
+        }
+      }
+    }
+
+    function renderMatchesConfig() {
+      const container = document.getElementById('matches-container');
+      container.innerHTML = '';
+      if (!appState.matches.length) {
+        container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:3rem 1rem; color:var(--text-muted);">
+          <div style="font-size:2.5rem; margin-bottom:0.5rem;">📋</div>
+          <p style="font-weight:600;">Aucun match configuré.</p>
+          <button class="btn btn-primary" id="btn-add-first-match" style="margin-top:0.8rem;">Ajouter votre premier match</button>
+        </div>`;
+        const b = document.getElementById('btn-add-first-match');
+        if (b) b.addEventListener('click', addNewMatch);
+        return;
+      }
+
+      appState.matches.forEach((m, idx) => {
+        const pipe = processMatchPipeline(m);
+        const is3Way = m.type === 3;
+        const { eq1, eq2 } = extractTeamNames(m.name);
+        const card = document.createElement('div');
+        card.className = 'match-card';
+        card.setAttribute('data-id', m.id);
+        card.innerHTML = `
+          <div class="match-head">
+            <span class="match-number-badge">#${idx + 1}</span>
+            <input type="text" class="match-name-input" value="${escapeHtml(m.name)}" data-id="${m.id}" data-field="name" title="Nom du match (ex: Real Madrid - Manchester City)">
+            <button class="btn btn-secondary btn-sm btn-del" data-id="${m.id}" style="color:var(--danger);" title="Supprimer ce match">✕</button>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="form-label">Type de Pari :</span>
+            <div class="toggle-group" data-id="${m.id}">
+              <button type="button" class="toggle-opt ${is3Way ? 'active' : ''}" data-type="3">1X2</button>
+              <button type="button" class="toggle-opt ${!is3Way ? 'active' : ''}" data-type="2">+/- 2.5</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="form-label">Cotes Bookmaker :</span>
+              <span class="margin-display" style="font-size:0.7rem; color:var(--text-muted);">Marge : ${pipe.margin.toFixed(1)}%</span>
+            </div>
+            ${is3Way ? `
+              <div class="input-row">
+                <div><label style="font-size:0.68rem; color:var(--text-muted); font-weight:700;">1 (Dom)</label><input type="number" step="0.01" class="input-field" data-id="${m.id}" data-field="odd-h" value="${m.odds?.h ?? 2.00}"></div>
+                <div><label style="font-size:0.68rem; color:var(--text-muted); font-weight:700;">N (Nul)</label><input type="number" step="0.01" class="input-field" data-id="${m.id}" data-field="odd-d" value="${m.odds?.d ?? 2.00}"></div>
+                <div><label style="font-size:0.68rem; color:var(--text-muted); font-weight:700;">2 (Ext)</label><input type="number" step="0.01" class="input-field" data-id="${m.id}" data-field="odd-a" value="${m.odds?.a ?? 2.00}"></div>
+              </div>` : `
+              <div class="input-row-2">
+                <div><label style="font-size:0.68rem; color:var(--text-muted); font-weight:700;">+ 2.5 Buts</label><input type="number" step="0.01" class="input-field" data-id="${m.id}" data-field="odd-over" value="${m.odds?.over ?? 2.00}"></div>
+                <div><label style="font-size:0.68rem; color:var(--text-muted); font-weight:700;">- 2.5 Buts</label><input type="number" step="0.01" class="input-field" data-id="${m.id}" data-field="odd-under" value="${m.odds?.under ?? 2.00}"></div>
+              </div>`}
+          </div>
+
+          <!-- Optimization 4 : Historique Pondéré Two-Way Binding -->
+          <div class="form-group" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:0.65rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+              <span class="form-label" style="margin-bottom:0; font-weight:700; color:#0f172a;">Historique des Formes (Two-Way) :</span>
+              <span style="font-size:0.68rem; color:var(--text-muted);">Pondération V2</span>
+            </div>
+
+            <!-- Équipe 1 (Domicile) -->
+            <div class="history-team-box" style="margin-bottom:0.6rem;">
+              <div class="history-team-header">
+                <span class="history-team-title">🏠 <strong>${escapeHtml(eq1)}</strong> (Domicile)</span>
+                <span class="history-team-badge">Texte ⇄ Constructeur</span>
+              </div>
+              <input type="text" class="input-field input-field-sm history-text-input" placeholder="[vd(2-0);ve(1-2);nd(1-1)]" data-id="${m.id}" data-team="home" value="${escapeHtml(m.form?.home)}">
+              <div class="history-chips-bar" id="chips-${m.id}-home"></div>
+              <div class="vb-container" id="vb-${m.id}-home">
+                <div class="vb-row">
+                  <span class="vb-label">Ajout :</span>
+                  <div class="vb-group" data-group="res">
+                    <button type="button" class="vb-btn active" data-val="v">V</button>
+                    <button type="button" class="vb-btn" data-val="n">N</button>
+                    <button type="button" class="vb-btn" data-val="d">D</button>
+                  </div>
+                  <div class="vb-group" data-group="loc">
+                    <button type="button" class="vb-btn active" data-val="d">Dom</button>
+                    <button type="button" class="vb-btn" data-val="e">Ext</button>
+                  </div>
+                  <div class="vb-score-box">
+                    <input type="number" min="0" max="20" class="vb-num-input vb-gf" value="1" title="Buts Marqués">
+                    <span style="font-weight:700; color:var(--text-muted);">-</span>
+                    <input type="number" min="0" max="20" class="vb-num-input vb-ga" value="0" title="Buts Encaissés">
+                  </div>
+                  <button type="button" class="btn btn-primary btn-sm vb-add-btn" data-id="${m.id}" data-team="home">+ Ajouter</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Équipe 2 (Extérieur) -->
+            <div class="history-team-box">
+              <div class="history-team-header">
+                <span class="history-team-title">✈️ <strong>${escapeHtml(eq2)}</strong> (Extérieur)</span>
+                <span class="history-team-badge">Texte ⇄ Constructeur</span>
+              </div>
+              <input type="text" class="input-field input-field-sm history-text-input" placeholder="[ve(1-0);nd(0-0);de(0-1)]" data-id="${m.id}" data-team="away" value="${escapeHtml(m.form?.away)}">
+              <div class="history-chips-bar" id="chips-${m.id}-away"></div>
+              <div class="vb-container" id="vb-${m.id}-away">
+                <div class="vb-row">
+                  <span class="vb-label">Ajout :</span>
+                  <div class="vb-group" data-group="res">
+                    <button type="button" class="vb-btn active" data-val="v">V</button>
+                    <button type="button" class="vb-btn" data-val="n">N</button>
+                    <button type="button" class="vb-btn" data-val="d">D</button>
+                  </div>
+                  <div class="vb-group" data-group="loc">
+                    <button type="button" class="vb-btn" data-val="d">Dom</button>
+                    <button type="button" class="vb-btn active" data-val="e">Ext</button>
+                  </div>
+                  <div class="vb-score-box">
+                    <input type="number" min="0" max="20" class="vb-num-input vb-gf" value="1" title="Buts Marqués">
+                    <span style="font-weight:700; color:var(--text-muted);">-</span>
+                    <input type="number" min="0" max="20" class="vb-num-input vb-ga" value="0" title="Buts Encaissés">
+                  </div>
+                  <button type="button" class="btn btn-primary btn-sm vb-add-btn" data-id="${m.id}" data-team="away">+ Ajouter</button>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:0.55rem;">
+              <span class="form-label" style="font-size:0.72rem; margin-bottom:0.15rem;">H2H direct (optionnel) :</span>
+              <input type="text" class="input-field input-field-sm" placeholder="Confrontations directes (ex: 2-1 0-0 3-1)" data-id="${m.id}" data-field="h2h" value="${escapeHtml(m.h2h)}">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+            <div class="form-group">
+              <span class="form-label">Classement:</span>
+              <div style="display:flex; gap:0.25rem;">
+                <input type="number" min="1" max="20" class="input-field input-field-sm" placeholder="Dom" data-id="${m.id}" data-field="rank-home" value="${m.rank?.home || 1}" title="Rang Domicile">
+                <input type="number" min="1" max="20" class="input-field input-field-sm" placeholder="Ext" data-id="${m.id}" data-field="rank-away" value="${m.rank?.away || 2}" title="Rang Extérieur">
+              </div>
+            </div>
+            <div class="form-group">
+              <span class="form-label">Actualité:</span>
+              <div style="display:flex; gap:0.25rem;">
+                <select class="input-field input-field-sm" data-id="${m.id}" data-field="news-home" title="Actualité Domicile">
+                  <option value="5" ${m.news?.home === 5 ? 'selected' : ''}>5★ Dom</option>
+                  <option value="4" ${m.news?.home === 4 ? 'selected' : ''}>4★ Dom</option>
+                  <option value="3" ${m.news?.home === 3 ? 'selected' : ''}>3★ Dom</option>
+                  <option value="2" ${m.news?.home === 2 ? 'selected' : ''}>2★ Dom</option>
+                  <option value="1" ${m.news?.home === 1 ? 'selected' : ''}>1★ Dom</option>
+                </select>
+                <select class="input-field input-field-sm" data-id="${m.id}" data-field="news-away" title="Actualité Extérieur">
+                  <option value="5" ${m.news?.away === 5 ? 'selected' : ''}>5★ Ext</option>
+                  <option value="4" ${m.news?.away === 4 ? 'selected' : ''}>4★ Ext</option>
+                  <option value="3" ${m.news?.away === 3 ? 'selected' : ''}>3★ Ext</option>
+                  <option value="2" ${m.news?.away === 2 ? 'selected' : ''}>2★ Ext</option>
+                  <option value="1" ${m.news?.away === 1 ? 'selected' : ''}>1★ Ext</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="pipeline-preview">
+            <div class="pipeline-head"><span>Probabilités Ajustées</span><span>100%</span></div>
+            <div class="pipeline-preview-inner">
+              ${is3Way ? `
+                <div class="pipeline-bar-wrap">
+                  <div class="p-bar-1" style="width:${(pipe.adjustedProbs['1'] * 100).toFixed(0)}%;">1: ${(pipe.adjustedProbs['1'] * 100).toFixed(0)}%</div>
+                  <div class="p-bar-N" style="width:${(pipe.adjustedProbs['N'] * 100).toFixed(0)}%;">N: ${(pipe.adjustedProbs['N'] * 100).toFixed(0)}%</div>
+                  <div class="p-bar-2" style="width:${(pipe.adjustedProbs['2'] * 100).toFixed(0)}%;">2: ${(pipe.adjustedProbs['2'] * 100).toFixed(0)}%</div>
+                </div>` : `
+                <div class="pipeline-bar-wrap">
+                  <div class="p-bar-1" style="width:${(pipe.adjustedProbs['+'] * 100).toFixed(0)}%;">+: ${(pipe.adjustedProbs['+'] * 100).toFixed(0)}%</div>
+                  <div class="p-bar-2" style="width:${(pipe.adjustedProbs['-'] * 100).toFixed(0)}%;">-: ${(pipe.adjustedProbs['-'] * 100).toFixed(0)}%</div>
+                </div>`}
+            </div>
+          </div>
+
+          <!-- Optimization 2 & 3 : Boutons d'action par match -->
+          <div class="match-actions-bar">
+            <button type="button" class="btn btn-secondary btn-sm btn-ask-ai" data-id="${m.id}" title="Copier le prompt d'analyse optimisé pour ChatGPT / Gemini">
+              🤖 Demander à l'IA
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm btn-save-match" data-id="${m.id}" title="Sauvegarder immédiatement ce match">
+              💾 Sauvegarder le match
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+
+        // Initialisation des chips
+        renderChipsForTeam(m.id, 'home');
+        renderChipsForTeam(m.id, 'away');
+      });
+
+      // Events généraux pour champs standards
+      container.querySelectorAll('input:not(.history-text-input):not(.vb-num-input), select').forEach(el => {
+        el.addEventListener('change', e => {
+          const id = e.target.getAttribute('data-id'), field = e.target.getAttribute('data-field');
+          const m = appState.matches.find(x => x.id === id); if (!m) return;
+          const val = e.target.value;
+          if (field === 'name') {
+            m.name = val;
+            renderMatchesConfig();
+            return;
+          }
+          if (field === 'odd-h') { if (!m.odds) m.odds = {}; m.odds.h = parseFloat(val) || 2.0; }
+          else if (field === 'odd-d') { if (!m.odds) m.odds = {}; m.odds.d = parseFloat(val) || 2.0; }
+          else if (field === 'odd-a') { if (!m.odds) m.odds = {}; m.odds.a = parseFloat(val) || 2.0; }
+          else if (field === 'odd-over') { if (!m.odds) m.odds = {}; m.odds.over = parseFloat(val) || 2.0; }
+          else if (field === 'odd-under') { if (!m.odds) m.odds = {}; m.odds.under = parseFloat(val) || 2.0; }
+          else if (field === 'h2h') m.h2h = val;
+          else if (field === 'rank-home') { if (!m.rank) m.rank = {}; m.rank.home = parseInt(val) || 1; }
+          else if (field === 'rank-away') { if (!m.rank) m.rank = {}; m.rank.away = parseInt(val) || 2; }
+          else if (field === 'news-home') { if (!m.news) m.news = {}; m.news.home = parseInt(val) || 3; }
+          else if (field === 'news-away') { if (!m.news) m.news = {}; m.news.away = parseInt(val) || 3; }
+          saveState();
+          updateMatchCardPreview(id);
+        });
+      });
+
+      // Two-Way Binding : saisie directe dans l'input texte de forme
+      container.querySelectorAll('.history-text-input').forEach(input => {
+        const handleSync = (e) => {
+          const id = e.target.getAttribute('data-id');
+          const team = e.target.getAttribute('data-team');
+          const m = appState.matches.find(x => x.id === id);
+          if (!m) return;
+          if (!m.form) m.form = { home: '', away: '' };
+          m.form[team] = e.target.value;
+          renderChipsForTeam(id, team);
+          updateMatchCardPreview(id);
+          saveState();
+        };
+        input.addEventListener('input', handleSync);
+        input.addEventListener('change', handleSync);
+      });
+
+      // Visual Builder : boutons de sélection V/N/D et Dom/Ext
+      container.querySelectorAll('.vb-group .vb-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          const group = btn.closest('.vb-group');
+          group.querySelectorAll('.vb-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+
+      // Visual Builder : bouton "+ Ajouter"
+      container.querySelectorAll('.vb-add-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          const mid = btn.getAttribute('data-id');
+          const team = btn.getAttribute('data-team');
+          addHistoryItemFromBuilder(mid, team);
+        });
+      });
+
+      // Bouton "Demander à l'IA"
+      container.querySelectorAll('.btn-ask-ai').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          const mid = btn.getAttribute('data-id');
+          copyAIPrompt(mid, btn);
+        });
+      });
+
+      // Bouton "Sauvegarder le match"
+      container.querySelectorAll('.btn-save-match').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          const mid = btn.getAttribute('data-id');
+          saveSpecificMatch(mid, btn);
+        });
+      });
+
+      // Toggle Type de pari 1X2 / +/- 2.5
+      container.querySelectorAll('.toggle-opt').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.closest('.toggle-group').getAttribute('data-id');
+          const m = appState.matches.find(x => x.id === id); if (!m) return;
+          const newType = parseInt(btn.getAttribute('data-type'));
+          if (m.type !== newType) {
+            m.type = newType;
+            if (newType === 2 && !m.odds?.over) {
+              m.odds = { ...m.odds, over: 2.00, under: 2.00 };
+            }
+            if (newType === 3 && !m.odds?.h) {
+              m.odds = { ...m.odds, h: 2.00, d: 2.00, a: 2.00 };
+            }
+            saveState(); renderMatchesConfig();
+          }
+        });
+      });
+
+      // Bouton suppression du match
+      container.querySelectorAll('.btn-del').forEach(b => {
+        b.addEventListener('click', () => {
+          appState.matches = appState.matches.filter(x => x.id !== b.getAttribute('data-id'));
+          saveState(); renderMatchesConfig();
+        });
+      });
+
+      updateBadges();
+    }
+
+    // =========================================================================
+    // 6. CALCUL COMBINATOIRE PAR WEB WORKER
+    // =========================================================================
+    function startWorkerCalculation() {
+      if (!appState.matches.length) { showToast('Veuillez ajouter au moins un match.'); return; }
+      document.getElementById('worker-progress-box').style.display = 'block';
+      document.getElementById('progress-fill').style.width = '0%';
+      document.getElementById('progress-percent').textContent = '0%';
+      document.getElementById('worker-status-indicator').textContent = 'Calcul en cours...';
+
+      const preparedMatches = appState.matches.map(m => {
+        const pipe = processMatchPipeline(m);
+        return { id: m.id, name: m.name, type: m.type, odds: m.odds, adjustedProbs: pipe.adjustedProbs };
+      });
+
+      initWorker();
+      comboWorker.postMessage({ matches: preparedMatches, topLimit: 5000 });
+      switchView('view-supervision');
+    }
+
+    // =========================================================================
+    // 7. SUPERVISION & TABLEAU PAGINÉ
+    // =========================================================================
+    let filteredCombos = [];
+    let currentPage = 1;
+    const PAGE_SIZE = 50;
+
+    function applyFiltersAndRenderTable() {
+      const minProb = parseFloat(document.getElementById('filter-min-prob').value) || 0;
+      const maxOdd = parseFloat(document.getElementById('filter-max-odd').value) || Infinity;
+
+      filteredCombos = (appState.combos || []).filter(c => {
+        if (c.probPct < minProb) return false;
+        if (c.odd > maxOdd) return false;
+        return true;
+      });
+
+      currentPage = 1;
+      renderTablePage();
+    }
+
+    function renderTablePage() {
+      const tbody = document.getElementById('combos-table-body');
+      tbody.innerHTML = '';
+      const total = filteredCombos.length;
+
+      if (!total) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:2rem; color:var(--text-muted);">Aucune combinaison ne correspond aux filtres actuels.</td></tr>`;
+        document.getElementById('pagination-info').textContent = '0 sur 0';
+        document.getElementById('page-current-display').textContent = 'Page 1 / 1';
+        return;
+      }
+
+      const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const end = Math.min(start + PAGE_SIZE, total);
+      const pageCombos = filteredCombos.slice(start, end);
+      const stake = parseFloat(document.getElementById('input-stake')?.value) || 10;
+
+      pageCombos.forEach((c, idx) => {
+        const globalRank = start + idx + 1;
+        const gain = (c.odd * stake).toFixed(2);
+        const evCls = c.ev >= 0 ? 'color:var(--success); font-weight:700;' : 'color:var(--danger);';
+        const tr = document.createElement('tr');
+        tr.className = 'row-stagger-in';
+        tr.style.setProperty('--stagger-delay', `${Math.min(idx * 15, 300)}ms`);
+        tr.innerHTML = `
+          <td><strong>#${globalRank}</strong></td>
+          <td>
+            <div class="prob-badge">
+              <span>${c.probPct.toFixed(2)}%</span>
+              <div class="prob-meter"><div class="prob-fill" style="width:${Math.min(c.probPct * 1.5, 100)}%;"></div></div>
+            </div>
+          </td>
+          <td><span class="odd-badge">@ ${c.odd.toFixed(2)}</span></td>
+          <td><strong>${gain} €</strong> <span style="font-size:0.7rem; color:var(--text-muted);">(10€)</span></td>
+          <td style="${evCls}">${(c.ev * 100).toFixed(1)}%</td>
+          <td>
+            <div class="selection-chips">
+              ${c.selections.map(s => {
+                const is1 = s.sel === '1', isN = s.sel === 'N', is2 = s.sel === '2', isPlus = s.sel === '+';
+                const cls = is1 ? 'sel-1' : isN ? 'sel-N' : is2 ? 'sel-2' : isPlus ? 'sel-plus' : 'sel-minus';
+                return `<span class="sel-chip ${cls}" title="${escapeHtml(s.matchName)}">${s.sel} <span style="opacity:0.75; font-size:0.65rem;">@${s.odd}</span></span>`;
+              }).join('')}
+            </div>
+          </td>
+          <td style="text-align:center;">
+            <button class="btn btn-secondary btn-sm btn-copy-combo" data-idx="${start + idx}" title="Copier la grille">📋</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll('.btn-copy-combo').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const combo = filteredCombos[parseInt(btn.getAttribute('data-idx'))];
+          copyComboDetails(combo, parseInt(btn.getAttribute('data-idx')) + 1);
+        });
+      });
+
+      document.getElementById('pagination-info').textContent = `${start + 1} à ${end} sur ${total.toLocaleString()}`;
+      document.getElementById('page-current-display').textContent = `Page ${currentPage} / ${totalPages}`;
+    }
+
+    // =========================================================================
+    // 8. VALIDATION & ARCHIVAGE
+    // =========================================================================
+    let valSelections = {};
+    function renderValidationList() {
+      const container = document.getElementById('validation-matches-list');
+      container.innerHTML = '';
+      if (!appState.matches.length) {
+        container.innerHTML = '<p style="color:var(--text-muted);">Aucun match à valider.</p>';
+        return;
+      }
+      appState.matches.forEach((m, i) => {
+        const is3Way = m.type === 3;
+        const row = document.createElement('div');
+        row.className = 'val-match-row';
+        row.innerHTML = `
+          <div><strong>#${i + 1} ${escapeHtml(m.name)}</strong></div>
+          <div class="toggle-group" data-id="${m.id}">
+            ${is3Way ? `
+              <button class="toggle-opt ${valSelections[m.id] === '1' ? 'active' : ''}" data-val="1">1</button>
+              <button class="toggle-opt ${valSelections[m.id] === 'N' ? 'active' : ''}" data-val="N">N</button>
+              <button class="toggle-opt ${valSelections[m.id] === '2' ? 'active' : ''}" data-val="2">2</button>
+            ` : `
+              <button class="toggle-opt ${valSelections[m.id] === '+' ? 'active' : ''}" data-val="+">+ 2.5</button>
+              <button class="toggle-opt ${valSelections[m.id] === '-' ? 'active' : ''}" data-val="-">- 2.5</button>
+            `}
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      container.querySelectorAll('.toggle-opt').forEach(b => {
+        b.addEventListener('click', () => {
+          const mid = b.closest('.toggle-group').getAttribute('data-id');
+          valSelections[mid] = b.getAttribute('data-val');
+          renderValidationList();
+        });
+      });
+    }
+
+    function resolveWinningCombination() {
+      const missing = appState.matches.filter(m => !valSelections[m.id]);
+      if (missing.length) { showToast(`Veuillez renseigner le résultat pour tous les matchs (${missing.length} manquant(s)).`); return; }
+
+      let winCombo = null;
+      let winIndex = -1;
+      for (let i = 0; i < appState.combos.length; i++) {
+        const c = appState.combos[i];
+        const matchAll = c.selections.every(s => valSelections[s.matchId] === s.sel);
+        if (matchAll) { winCombo = c; winIndex = i + 1; break; }
+      }
+
+      const box = document.getElementById('winning-combo-container');
+      box.style.display = 'block';
+      if (!winCombo) {
+        box.innerHTML = `<div class="card" style="border-left:4px solid var(--danger);"><strong>Combinaison hors échantillon :</strong> La grille gagnante n'est pas dans le top combinatoire calculé.</div>`;
+        return;
+      }
+
+      const stake = parseFloat(document.getElementById('input-stake')?.value) || 10;
+      const gain = winCombo.odd * stake;
+      const net = gain - stake;
+
+      box.innerHTML = `
+        <div class="winning-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <div>
+              <span style="font-size:0.75rem; font-weight:800; color:var(--success); text-transform:uppercase;">🎉 Grille Gagnante Identifiée !</span>
+              <h3 style="font-size:1.2rem; color:var(--text-dark); margin-top:0.2rem;">Combinaison #${winIndex}</h3>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:1.4rem; font-weight:800; color:var(--success);">${gain.toFixed(2)} €</div>
+              <div style="font-size:0.72rem; color:var(--text-muted);">Bénéfice Net : +${net.toFixed(2)} €</div>
+            </div>
+          </div>
+          <div class="selection-chips" style="margin-bottom:0.8rem;">
+            ${winCombo.selections.map(s => `<span class="sel-chip sel-1" style="background:#fff;">${escapeHtml(s.matchName)}: <strong>${s.sel}</strong> (@${s.odd})</span>`).join('')}
+          </div>
+          <button class="btn btn-success btn-sm" id="btn-archive-win">🗄️ Archiver cette Session Gagnante</button>
+        </div>
+      `;
+
+      document.getElementById('btn-archive-win').addEventListener('click', () => {
+        appState.archives.unshift({
+          id: 'arch-' + Date.now(),
+          date: new Date().toISOString(),
+          matchesCount: appState.matches.length,
+          odd: winCombo.odd,
+          stake,
+          gain,
+          net,
+          selections: winCombo.selections
+        });
+        saveState();
+        showToast('Session archivée avec succès !');
+        switchView('view-archives');
+      });
+    }
+
+    function renderArchivesView() {
+      const list = document.getElementById('archives-list');
+      const total = appState.archives.length;
+      document.getElementById('kpi-arch-total').textContent = total;
+
+      if (!total) {
+        document.getElementById('kpi-arch-avg-odd').textContent = '0.00';
+        document.getElementById('kpi-arch-profit').textContent = '0.00 €';
+        list.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--text-muted);">Aucune session archivée pour l'instant.</div>`;
+        return;
+      }
+
+      const sumOdd = appState.archives.reduce((a, b) => a + b.odd, 0);
+      const sumProfit = appState.archives.reduce((a, b) => a + b.net, 0);
+      document.getElementById('kpi-arch-avg-odd').textContent = (sumOdd / total).toFixed(2);
+      document.getElementById('kpi-arch-profit').textContent = `${sumProfit >= 0 ? '+' : ''}${sumProfit.toFixed(2)} €`;
+
+      list.innerHTML = '';
+      appState.archives.forEach((arch) => {
+        const d = new Date(arch.date).toLocaleString('fr-FR');
+        const item = document.createElement('div');
+        item.style.padding = '0.75rem';
+        item.style.borderBottom = '1px solid var(--border)';
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.style.alignItems = 'center';
+        item.style.flexWrap = 'wrap';
+        item.style.gap = '0.5rem';
+        item.innerHTML = `
+          <div>
+            <div style="font-weight:700; font-size:0.85rem;">Session du ${d} (${arch.matchesCount} matchs)</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">Cote : @${arch.odd.toFixed(2)} | Mise : ${arch.stake.toFixed(2)} €</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:0.95rem; font-weight:800; color:var(--success);">+${arch.net.toFixed(2)} €</div>
+            <div style="font-size:0.7rem; color:var(--text-muted);">${arch.gain.toFixed(2)} € brut</div>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    // =========================================================================
+    // 9. INITIALISATION GLOBALE & ÉVÉNEMENTS
+    // =========================================================================
+    function setupApp() {
+      loadState();
+
+      // Navigation
+      document.querySelectorAll('[data-view]').forEach(btn => {
+        btn.addEventListener('click', () => switchView(btn.getAttribute('data-view')));
+      });
+
+      // Actions Header
+      document.getElementById('btn-quick-calculate').addEventListener('click', startWorkerCalculation);
+      document.getElementById('btn-recalculate-worker').addEventListener('click', startWorkerCalculation);
+
+      document.getElementById('btn-reset-session').addEventListener('click', () => {
+        if (confirm('Réinitialiser la configuration et le calcul combinatoire ?')) {
+          appState.matches = []; appState.combos = []; saveState();
+          renderMatchesConfig(); applyFiltersAndRenderTable();
+          showToast('Session réinitialisée.');
+        }
+      });
+
+      document.getElementById('btn-load-demo').addEventListener('click', () => {
+        appState.matches = deepClone(defaultMatches);
+        saveState(); renderMatchesConfig();
+        showToast('4 matchs de Ligue des Champions chargés avec cotes et syntaxes avancées.');
+      });
+
+      document.getElementById('btn-preset-champions').addEventListener('click', () => {
+        appState.matches = deepClone(defaultMatches);
+        saveState(); renderMatchesConfig();
+        showToast('Preset Ligue des Champions appliqué.');
+      });
+
+      document.getElementById('btn-new-day').addEventListener('click', () => {
+        appState.matches = [
+          createNewMatch(1),
+          createNewMatch(2),
+          createNewMatch(3)
+        ];
+        saveState(); renderMatchesConfig();
+        showToast('Nouvelle journée : 3 matchs vierges créés (cotes indépendantes à 2.00).');
+      });
+
+      // Modal Guide
+      const guideModal = document.getElementById('guide-modal');
+      const openGuide = () => { guideModal.style.display = 'flex'; };
+      const closeGuide = () => { guideModal.style.display = 'none'; };
+
+      document.getElementById('btn-open-guide').addEventListener('click', openGuide);
+      document.getElementById('btn-close-modal-x').addEventListener('click', closeGuide);
+      document.getElementById('btn-close-modal-ok').addEventListener('click', closeGuide);
+      guideModal.addEventListener('click', (e) => { if (e.target === guideModal) closeGuide(); });
+      window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && guideModal.style.display === 'flex') closeGuide(); });
+
+      document.getElementById('btn-add-match').addEventListener('click', addNewMatch);
+
+      // Filtres & Pagination
+      document.getElementById('filter-min-prob').addEventListener('input', () => { currentPage = 1; applyFiltersAndRenderTable(); });
+      document.getElementById('filter-max-odd').addEventListener('input', () => { currentPage = 1; applyFiltersAndRenderTable(); });
+      document.getElementById('input-stake').addEventListener('input', renderTablePage);
+
+      document.getElementById('btn-page-prev').addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTablePage(); } });
+      document.getElementById('btn-page-next').addEventListener('click', () => { if (currentPage < Math.ceil(filteredCombos.length / PAGE_SIZE)) { currentPage++; renderTablePage(); } });
+      document.getElementById('btn-page-first').addEventListener('click', () => { currentPage = 1; renderTablePage(); });
+      document.getElementById('btn-page-last').addEventListener('click', () => { currentPage = Math.ceil(filteredCombos.length / PAGE_SIZE) || 1; renderTablePage(); });
+
+      // CSV Export
+      document.getElementById('btn-export-csv').addEventListener('click', () => {
+        if (!filteredCombos.length) { showToast('Rien à exporter.'); return; }
+        let csv = 'Rang;Probabilite;Cote;Selections\n';
+        filteredCombos.slice(0, 5000).forEach((c, i) => {
+          csv += `${i + 1};${c.probPct}%;${c.odd};"${c.selections.map(s => s.matchName + ':' + s.sel).join('|')}"\n`;
+        });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+        link.download = `pronos_pro_${Date.now()}.csv`; link.click();
+        showToast('CSV exporté.');
+      });
+
+      // Validation
+      document.getElementById('btn-resolve-winning').addEventListener('click', resolveWinningCombination);
+      document.getElementById('btn-auto-fill-fav').addEventListener('click', () => {
+        appState.matches.forEach(m => {
+          const pipe = processMatchPipeline(m);
+          if (m.type === 3) {
+            let best = '1', maxP = pipe.adjustedProbs['1'];
+            if (pipe.adjustedProbs['N'] > maxP) { best = 'N'; maxP = pipe.adjustedProbs['N']; }
+            if (pipe.adjustedProbs['2'] > maxP) best = '2';
+            valSelections[m.id] = best;
+          } else {
+            valSelections[m.id] = pipe.adjustedProbs['+'] >= pipe.adjustedProbs['-'] ? '+' : '-';
+          }
+        });
+        renderValidationList(); showToast('Favoris appliqués.');
+      });
+
+      // Backup JSON & Clear
+      document.getElementById('btn-export-backup').addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([JSON.stringify(appState, null, 2)], { type: 'application/json' }));
+        link.download = `pronos_backup_${Date.now()}.json`; link.click();
+        showToast('Sauvegarde JSON téléchargée.');
+      });
+      document.getElementById('btn-clear-archives').addEventListener('click', () => {
+        if (confirm('Vider les archives ?')) { appState.archives = []; saveState(); renderArchivesView(); showToast('Archives vidées.'); }
+      });
+
+      renderMatchesConfig();
+      applyFiltersAndRenderTable();
+    }
+
+    window.addEventListener('DOMContentLoaded', setupApp);
+  </script>
+</body>
+</html>
